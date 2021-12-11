@@ -5,6 +5,9 @@ import xgboost as xgb
 import pickle
 import os
 
+from datetime import datetime
+from pubsub import publish_new_score_topic
+
 from flask import Flask, request, jsonify
 from flask_basicauth import BasicAuth
 
@@ -37,6 +40,13 @@ def get_score():
         status = "REPROVADO"
     elif _score <= 0.6:
         status = "MESA_DE_AVALIACAO"
+
+    # Publicar mensagem no tópico
+    request_date = datetime.today().strftime(format="%Y-%m-%d %H:%M:%S")
+    publish_new_score_topic('{"cpf":%s, "request_datetime":"%s", \
+                              "score":%.4f, "status":"%s"}'\
+        %(dados['cpf'], request_date, score, status))
+
     resultado = jsonify(cpf=dados["cpf"], score=_score, status=status)
     print(str(resultado))
     return resultado
